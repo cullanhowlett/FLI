@@ -51,6 +51,15 @@ def invlaplace_kernel(kvec, fd=False):
     return - safe_div(1, kk)
 
 
+def lattice_read_kernel(kvec):
+    """
+    CIC read window for particles on the cell-centre lattice (average of the 8 surrounding nodes).
+    Zero on Nyquist planes, where the mode is unrecoverable at cell centres.
+    """
+    kern = np.cos(kvec[0] / 2) * np.cos(kvec[1] / 2) * np.cos(kvec[2] / 2)
+    return np.where(np.abs(kern) < 1e-6, 0., kern)
+
+
 def gradient_kernel(kvec, direction:int, fd=False):
     """
     Compute the gradient kernel in the given direction
@@ -118,10 +127,12 @@ def pm_forces(pos, mesh_shape, mesh=None, grad_fd=False, lap_fd=False, r_split=0
     kvec = rfftk(mesh_shape)
     pot_k = delta_k * invlaplace_kernel(kvec, lap_fd) * longrange_kernel(kvec, r_split=r_split)
 
-    # # If painted field, double deconvolution to account for both painting and reading 
-    # if mesh is None:
-    #     print("deconv")
-    #     pot_k /= paint_kernel(kvec, order=2)**2
+    # If painted field, double deconvolution to account for both painting and reading
+    if mesh is None:
+        pot_k /= paint_kernel(kvec, order=2)**2
+    else:
+        # Given (Lagrangian) field is read on the cell-centre particle lattice
+        pot_k = safe_div(pot_k, lattice_read_kernel(kvec))
 
     # Compute gravitational forces
     return jnp.stack([cic_read(jnp.fft.irfftn(- gradient_kernel(kvec, i, grad_fd) * pot_k), pos) 

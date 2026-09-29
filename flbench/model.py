@@ -367,7 +367,7 @@ class FieldLevelModel(Model):
             return gxy_mesh
                     
         # Create regular grid of particles
-        pos = jnp.indices(self.mesh_shape, dtype=float).reshape(3,-1).T
+        pos = jnp.indices(self.mesh_shape, dtype=float).reshape(3,-1).T + 0.5  # cell centres, avoiding the CIC kernel kink at grid nodes
 
         # Lagrangian bias expansion weights at a_obs (but based on initial particules positions)
         lbe_weights = lagrangian_weights(cosmology, self.a_obs, pos, self.box_shape, **bias, **init)
@@ -385,7 +385,7 @@ class FieldLevelModel(Model):
             cosmology._workspace = {}  # HACK: temporary fix
             pos, vel = nbody_bf(cosmology, **init, pos=pos, a=self.a_obs, n_steps=self.nbody_steps, 
                                  grad_fd=False, lap_fd=False, snapshots=self.nbody_snapshots)
-            part = deterministic('nbody_pos', pos), vel
+            part = deterministic('nbody_pos', pos), deterministic('nbody_vel', vel)
             pos, vel = tree.map(lambda x: x[-1], part)
 
         # RSD displacement at a_obs

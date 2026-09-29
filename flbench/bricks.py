@@ -7,7 +7,7 @@ from jax_cosmo import Cosmology
 from jaxpm.painting import cic_read
 
 from flbench.utils import std2trunc, trunc2std, rg2cgh, cgh2rg, ch2rshape, r2chshape, safe_div
-from flbench.nbody import rfftk, invlaplace_kernel, a2g, a2f
+from flbench.nbody import rfftk, invlaplace_kernel, lattice_read_kernel, a2g, a2f
 
 
 # [Planck2015 XIII](https://arxiv.org/abs/1502.01589) Table 4 final column (best fit)
@@ -163,7 +163,8 @@ def lagrangian_weights(cosmo:Cosmology, a, pos, box_shape,
     #     delta = init_mesh
     #     delta_k = jnp.fft.rfftn(delta)
     # else:
-    delta_k = init_mesh
+    # Deconvolve the CIC read on the cell-centre particle lattice (exact for the b1 term only)
+    delta_k = safe_div(init_mesh, lattice_read_kernel(rfftk(ch2rshape(init_mesh.shape))))
     delta = jnp.fft.irfftn(delta_k)
     # Smooth field to mitigate negative weights or TODO: use gaussian lagrangian biases
     # k_nyquist = jnp.pi * jnp.min(mesh_shape / box_shape)
