@@ -24,8 +24,9 @@ fields (or the z~8 snapshot of halos / 10% particle subsets as a fallback refere
 - `examples/make_truth.py`: N-body truth at a=1 (`evolution='nbody'`, BullFrog). Saves to `examples/save_dir/` (git-ignored):
   `truth.npz` with `init_field` (linear delta, real space, normalised to a=1; scale by D(z)/D(0) for other epochs),
   `final_field` (z=0 real-space 1+delta, CIC from all particles), `pos` [Mpc/h] and `vel` [km/s] for a random `frac` subset,
-  true params, `seed`, `frac`; plus `model.yaml` and diagnostic plots (fields, shot-noise-subtracted P(k) vs linear/halofit,
-  velocity histograms).
+  true params, `seed`, `frac`, `config` (str(model)); plus `model.yaml`. If a saved truth matches the current config/params/seed/frac
+  it is reloaded and only the plots are remade (`remake=True` forces a rerun). Plots: thin-slab slices (`slab`, `axis`) with
+  mass-weighted velocity arrows from the saved subset, shot-noise-subtracted P(k) vs linear/halofit, velocity histograms.
 
 ## Changes to upstream physics (and why)
 - Particle lattice starts at cell centres (`+0.5` in `FieldLevelModel.evolve`). On CIC nodes the kernel has a kink, giving a
